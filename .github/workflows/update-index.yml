@@ -51,12 +51,12 @@ jobs:
           <body>
             <main>
               <h1>Automation Reports</h1>
-              <p>Latest generated report files.</p>
+              <p>All generated report files.</p>
               <ul>
           EOF
           
-          # Sort HTML files by modification time (newest first)
-          for html_file in $(ls -t *.html 2>/dev/null | grep -v '^index.html$'); do
+          # Sort report files by timestamp in the filename (newest first).
+          for html_file in $(find . -maxdepth 1 -type f -name '*.html' -printf '%f\n' | grep -v '^index.html$' | sort -r); do
             base_name="${html_file%.html}"
             echo "<li>" >> index.html
             echo "<span class=\"report-title\">$base_name</span>" >> index.html
