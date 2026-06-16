@@ -1,6 +1,7 @@
 name: Auto Update Index
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -8,6 +9,7 @@ on:
       - '*.html'
       - '*.pdf'
       - '*.log'
+      - '.github/workflows/update-index.yml'
 
 permissions:
   contents: write
@@ -23,6 +25,8 @@ jobs:
 
       - name: Generate index.html
         run: |
+          set -euo pipefail
+
           cat << 'EOF' > index.html
           <!doctype html>
           <html lang="en">
@@ -56,7 +60,16 @@ jobs:
           EOF
           
           # Sort report files by timestamp in the filename (newest first).
-          for html_file in $(find . -maxdepth 1 -type f -name '*.html' -printf '%f\n' | grep -v '^index.html$' | sort -r); do
+          find . -maxdepth 1 -type f -name '*.html' -printf '%f\n' \
+            | grep -v '^index.html$' \
+            | while IFS= read -r html_file; do
+                base_name="${html_file%.html}"
+                timestamp=$(echo "$base_name" | grep -oE '[0-9]{8}_[0-9]{6}' || true)
+                printf '%s\t%s\n' "${timestamp:-00000000_000000}" "$html_file"
+              done \
+            | sort -r \
+            | cut -f2- \
+            | while IFS= read -r html_file; do
             base_name="${html_file%.html}"
             echo "<li>" >> index.html
             echo "<span class=\"report-title\">$base_name</span>" >> index.html
